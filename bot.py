@@ -1,82 +1,145 @@
 # bot.py
-import os
-from primekillermd import antidelete, antilink, group_commands, media, bug_crash, utils
+# Prime Killer MD WhatsApp Bot
+# Powered by ⛧ＰＲＩΜΞ⛧ kîᄂᄂér ⛧ƘΞИŦ⛧
 
-# Your bot details
-BOT_NAME = "Prime Killer MD"
-WHATSAPP_CHANNEL = "https://whatsapp.com/channel/0029Vb7UKYqHbFVCW3uGad0l"
-OWNER_NUMBER = "254792770219"
-TELEGRAM_CONTACT = "https://t.me/Handsome_primis_killer_kent"
+from primekillermd import (
+    utils,
+    antidelete,
+    antilink,
+    group_commands,
+    media,
+    bug_crash
+)
 
-# Initialize bot (example using a WhatsApp library)
-bot = utils.init_bot(owner=OWNER_NUMBER)
+# =========================
+# BOT START MESSAGE (PANEL)
+# =========================
+utils.log_status(
+    "⛧ＰＲＩΜΞ⛧ ᛕΙᄂᄂΞＲ ⛧CЯΛSᕼΞЯ⛧ MD is ONLINE\n"
+    "Powered by ⛧ＰＲＩΜΞ⛧ kîᄂᄂér ⛧ƘΞИŦ⛧\n\n"
+    "Enter your phone number to pair  eg 2547xxxxxxx\n"
+    "Then use:\n.pair PRIMEMD1"
+)
 
-# Menu / info message
-def start_message(user):
-    menu = f"""
-╭━━ ◇「 ° INFOBOT ° 」◇
-┃⌬ ʙᴏᴛ : {BOT_NAME}
-┃⌬ ᴜsᴇʀ : {user}
-┃⌬ ᴘʟᴀᴛᴇғᴏʀᴍ : WhatsApp / Multi-device
-┃⌬ ᴅᴇᴠ : {OWNER_NUMBER}
-╰━━━━━━━━━━━━━━━◇
 
-╭━━ ◇「 ° {BOT_NAME} ° 」◇
-┃⌬ .pair - Connect your device
-┃⌬ .delpair - Remove your device
-┃⌬ .listpair - View all paired devices
-┃⌬ .antidelete - Anti-delete messages
-┃⌬ .antilink - Anti-link protection
-┃⌬ .promote / .demote / .kickall - Group commands
-┃⌬ .image / .video / .song / .tiktok / .yts - Media commands
-┃⌬ .bug - Bug / Crash menu (Coming Soon)
-┃⌬ .ping - Bot latency
-╰━━━━━━━━━━━━━━━◇
+# =========================
+# MAIN MESSAGE HANDLER
+# =========================
+def on_message(message):
+    """
+    This function is called automatically by the WhatsApp runtime
+    whenever a message is received.
+    """
 
-Join the channel first to use the bot: {WHATSAPP_CHANNEL}
-Contact dev: {TELEGRAM_CONTACT}
-"""
-    bot.send_message(user, menu)
+    sender = message.sender
+    text = message.text.strip()
+    chat = message.chat
 
-# Command handlers
-def handle_commands(message, user):
-    text = message.lower()
-    
-    # Pair commands
-    if text.startswith(".pair") or text.startswith(".delpair") or text.startswith(".listpair"):
-        utils.pair_command(bot, message, user, WHATSAPP_CHANNEL)
-    
-    # Anti-delete
-    elif text.startswith(".antidelete"):
-        antidelete.run(bot, message, user, WHATSAPP_CHANNEL)
-    
-    # Anti-link
-    elif text.startswith(".antilink"):
-        antilink.run(bot, message, user, WHATSAPP_CHANNEL)
-    
-    # Group commands
-    elif text.startswith(".promote") or text.startswith(".demote") or text.startswith(".kickall") or text.startswith(".open") or text.startswith(".close") or text.startswith(".antigroupmention"):
-        group_commands.run(bot, message, user)
-    
-    # Media commands
-    elif text.startswith(".image") or text.startswith(".video") or text.startswith(".song") or text.startswith(".tiktok") or text.startswith(".yts") or text.startswith(".vcf"):
-        media.run(bot, message, user)
-    
-    # Bug / Crash commands
-    elif text.startswith(".bug"):
-        bug_crash.run(bot, message, user)
-    
-    # Ping
-    elif text.startswith(".ping"):
-        bot.send_message(user, "🏓 Pong!")
+    # Log message to panel
+    utils.log_whatsapp_message(sender, chat, text)
 
-# Main loop
-def main():
-    for user, message in bot.listen():
-        if message.startswith(".start"):
-            start_message(user)
-        else:
-            handle_commands(message, user)
+    # =========================
+    # PAIRING COMMANDS
+    # =========================
+    if text.startswith(".pair"):
+        utils.pair_command(message)
+        return
 
-if __name__ == "__main__":
-    main()
+    if text.startswith(".delpair"):
+        utils.delpair_command(message)
+        return
+
+    if text.startswith(".listpair"):
+        utils.listpair_command(message)
+        return
+
+    # =========================
+    # ACCESS CONTROL
+    # =========================
+    if not utils.check_access(message):
+        return
+
+    # =========================
+    # MENU
+    # =========================
+    if text in [".menu", ".help"]:
+        message.reply(
+            "╭━━ ◇「 ⛧ＰＲＩΜΞ⛧ KILLER MD 」◇\n"
+            "┃ Owner : 254792770219\n"
+            "┃ Platform : WhatsApp\n"
+            "┃ Status : Online\n"
+            "╰━━━━━━━━━━━━━━━◇\n\n"
+
+            "╭━━ ◇「 GROUP COMMANDS 」◇\n"
+            "┃ .antilink on/off\n"
+            "┃ .antidelete on/off\n"
+            "┃ .promote @user\n"
+            "┃ .demote @user\n"
+            "┃ .kick @user\n"
+            "┃ .kickall\n"
+            "┃ .open / .close\n"
+            "╰━━━━━━━━━━━━━━━◇\n\n"
+
+            "╭━━ ◇「 MEDIA COMMANDS 」◇\n"
+            "┃ .image <query>\n"
+            "┃ .video <query>\n"
+            "┃ .song <query>\n"
+            "┃ .tiktok <link>\n"
+            "┃ .yts <query>\n"
+            "┃ .vcf\n"
+            "╰━━━━━━━━━━━━━━━◇\n\n"
+
+            "╭━━ ◇「 UTILITIES 」◇\n"
+            "┃ .ping\n"
+            "╰━━━━━━━━━━━━━━━◇\n\n"
+
+            "╭━━ ◇「 BUG CRASH 」◇\n"
+            "┃ ⚠ COMING SOON ⚠\n"
+            "╰━━━━━━━━━━━━━━━◇\n\n"
+
+            "🔗 WhatsApp Channel:\n"
+            "https://whatsapp.com/channel/0029Vb7UKYqHbFVCW3uGad0l\n\n"
+
+            "🔗 Telegram:\n"
+            "https://t.me/primekillercrasher\n"
+            "https://t.me/primekillercrasherv1\n\n"
+
+            "Powered by ⛧ＰＲＩΜΞ⛧ kîᄂᄂér ⛧ƘΞИŦ⛧"
+        )
+        return
+
+    # =========================
+    # PING
+    # =========================
+    if text == ".ping":
+        utils.ping(message)
+        return
+
+    # =========================
+    # GROUP COMMANDS
+    # =========================
+    if text.startswith((
+        ".antilink", ".antidelete",
+        ".promote", ".demote",
+        ".kick", ".kickall",
+        ".open", ".close"
+    )):
+        group_commands.run(message)
+        return
+
+    # =========================
+    # MEDIA COMMANDS
+    # =========================
+    if text.startswith((
+        ".image", ".video", ".song",
+        ".tiktok", ".yts", ".vcf"
+    )):
+        media.run(message)
+        return
+
+    # =========================
+    # BUG CRASH (COMING SOON)
+    # =========================
+    if text.startswith(".bug"):
+        bug_crash.run(message)
+        return
