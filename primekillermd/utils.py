@@ -1,53 +1,48 @@
-# utils.py
-# Powered by ⛧ＰＲＩΜΞ⛧ kîᄂᄂér ⛧ƘΞИŦ⛧
-# Channel: https://whatsapp.com/channel/0029Vb7UKYqHbFVCW3uGad0l
+# primekillermd/utils.py
+from time import time
 
-from some_whatsapp_library import WhatsAppBot
+# Example bot initializer (replace with your actual WhatsApp bot library)
+class WhatsAppBot:
+    def __init__(self, owner):
+        self.owner = owner
+        self.users = {}
+    
+    def send_message(self, user, message):
+        print(f"[Message to {user}]: {message}")
+    
+    def listen(self):
+        """
+        Mock listener: yields (user, message) tuples.
+        Replace with your WhatsApp library listener.
+        """
+        while True:
+            user_input = input("Message (format user: message): ")
+            if ":" in user_input:
+                user, msg = user_input.split(":", 1)
+                yield user.strip(), msg.strip()
 
-bot = WhatsAppBot()
+def init_bot(owner):
+    """Initialize and return bot instance"""
+    return WhatsAppBot(owner)
 
-# Send a formatted message
-def send_message(chat_id, text, link_channel=True):
-    """
-    Send a message to the user.
-    Optionally adds 'View Channel' at the bottom.
-    """
-    if link_channel:
-        text += "\n\nView Channel: https://whatsapp.com/channel/0029Vb7UKYqHbFVCW3uGad0l"
-    bot.send_message(chat_id, text)
+# Pair command handler
+def pair_command(bot, message, user):
+    text = message.lower()
+    if text.startswith(".pair"):
+        bot.send_message(user, "✅ Device paired successfully!")
+    elif text.startswith(".delpair"):
+        bot.send_message(user, "🗑️ Pair removed successfully!")
+    elif text.startswith(".listpair"):
+        bot.send_message(user, "📋 List of paired devices:\n1. Device A\n2. Device B")
 
-# Check if user is the owner
-def is_owner(user_id):
-    """
-    Replace 'YOUR_NUMBER' with your WhatsApp number.
-    Returns True if user is the bot owner.
-    """
-    return str(user_id) == "254792770219"
+# Simple ping
+def ping(bot, user):
+    bot.send_message(user, "🏓 Pong!")
 
-# Format command menu
-def format_menu(bot_name="Prime Killer MD", user_name="", platform="WhatsApp"):
-    """
-    Returns a decorated string for the bot menu
-    """
-    menu_text = f"""
-╭━━ ◇「 ° INFOBOT ° 」◇
-┃⌬ ʙᴏᴛ : {bot_name}
-┃⌬ ᴜsᴇʀ : {user_name}
-┃⌬ ᴘʟᴀᴛᴇғᴏʀᴍ : {platform}
-┃⌬ ᴅᴇᴠ : ⛧ＰＲＩΜΞ⛧ kîᄂᄂér ⛧ƘΞИŦ⛧
-╰━━━━━━━━━━━━━━━◇
-"""
-    return menu_text
-
-# Helper to join arguments into a string
-def args_to_text(args):
-    return " ".join(args) if args else ""
-
-# Example function to safely get a file path
-def validate_file(file_path):
-    import os
-    return file_path if os.path.exists(file_path) else None
-
-# Utility for error messages
-def send_error(chat_id, error_msg):
-    bot.send_message(chat_id, f"❌ Error: {error_msg}")
+# Uptime function
+START_TIME = time()
+def runtime(bot, user):
+    elapsed = int(time() - START_TIME)
+    hours, remainder = divmod(elapsed, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    bot.send_message(user, f"⏱️ Bot uptime: {hours}h {minutes}m {seconds}s")
