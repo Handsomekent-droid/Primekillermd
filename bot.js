@@ -1,95 +1,83 @@
 // bot.js
 const fs = require('fs');
 const path = require('path');
-const { WAConnection, MessageType, Mimetype } = require('@adiwajshing/baileys');
-const primekillermd = require('./primekillermd');
+const utils = require('./utilis');
+const antidelete = require('./primekillermd/antidelete');
+const antilink = require('./primekillermd/antilink');
+const group_commands = require('./primekillermd/group_commands');
+const media = require('./primekillermd/media');
+const bug_crash = require('./primekillermd/bug_crash');
 
-// Load or create pairs.json
-const PAIRS_FILE = path.join(__dirname, 'pairs.json');
-if (!fs.existsSync(PAIRS_FILE)) fs.writeFileSync(PAIRS_FILE, '{}');
-const pairs = JSON.parse(fs.readFileSync(PAIRS_FILE));
+// Initialize bot (replace this with actual WhatsApp bot instance)
+const bot = utils.initBot({ sendMessage: console.log, listen: () => [] });
 
-const OWNER_NUMBER = '254792770219';
-const WHATSAPP_CHANNEL = 'https://whatsapp.com/channel/0029Vb7UKYqHbFVCW3uGad0l';
-
-async function startBot() {
-    const conn = new WAConnection();
-    conn.logger.level = 'warn';
-    await conn.connect();
-
-    console.log('⛧ＰＲＩＭΞ⛧ ᛕΙᄂᄂΞＲ ⛧CЯΛSᕼΞЯ⛧ ɃЦ₲ ɃØŦ is running...');
-
-    conn.on('chat-update', async chatUpdate => {
-        if (!chatUpdate.hasNewMessage) return;
-        const message = chatUpdate.messages.all()[0];
-        if (!message.message) return;
-        const sender = message.key.remoteJid;
-        const text = message.message.conversation || message.message.extendedTextMessage?.text;
-        if (!text) return;
-
-        // Check if user is paired
-        const isPaired = pairs[sender];
-
-        // Pairing logic
-        if (text.startsWith('.pair ')) {
-            const code = text.split(' ')[1];
-            if (!code) return conn.sendMessage(sender, 'Enter pairing code: PRIMEMD1', MessageType.text);
-            pairs[sender] = code;
-            fs.writeFileSync(PAIRS_FILE, JSON.stringify(pairs, null, 2));
-            return conn.sendMessage(sender, `✅ Paired successfully with code ${code}`, MessageType.text);
-        }
-
-        // Delpair and listpair only for OWNER
-        if (sender.includes(OWNER_NUMBER)) {
-            if (text.startsWith('.delpair ')) {
-                const target = text.split(' ')[1];
-                delete pairs[target];
-                fs.writeFileSync(PAIRS_FILE, JSON.stringify(pairs, null, 2));
-                return conn.sendMessage(sender, `❌ Pair removed for ${target}`, MessageType.text);
-            }
-            if (text.startsWith('.listpair')) {
-                return conn.sendMessage(sender, `📋 Paired devices:\n${JSON.stringify(pairs, null, 2)}`, MessageType.text);
-            }
-        }
-
-        if (!isPaired) return conn.sendMessage(sender, '❗ You need to pair first using: .pair PRIMEMD1', MessageType.text);
-
-        // Menu command
-        if (text.startsWith('.menu')) {
-            const menu = `
-╭━━ ◇「 PRIME KILLER MD 」◇
-┃⌬ BOT: ⛧ＰＲＩΜΞ⛧ ᛕΙᄂᄂΞＲ ⛧CЯΛSᕼΞЯ⛧ ɃЦ₲ ɃØŦ
-┃⌬ OWNER: ${OWNER_NUMBER}
-┃⌬ PLATFORM: WhatsApp
-╰━━━━━━━━━━━━━━━◇
-
-╭━━ ◇「 COMMANDS 」◇
-┃⌬ .antidelete
-┃⌬ .antilink
-┃⌬ .promote / .demote / .kickall / .close / .open
-┃⌬ .image / .video / .song / .tiktok / .yts
-┃⌬ .bug
-┃⌬ .ping
-╰━━━━━━━━━━━━━━━◇
-
-Powered by ⛧ＰＲＩΜΞ⛧ kîᄂᄂér ⛧ƘΞИŦ⛧
-Check channel: ${WHATSAPP_CHANNEL}
-`;
-            return conn.sendMessage(sender, menu, MessageType.text);
-        }
-
-        // Handle commands by imported modules
-        primekillermd.antidelete.run(conn, message, sender, WHATSAPP_CHANNEL);
-        primekillermd.antilink.run(conn, message, sender, WHATSAPP_CHANNEL);
-        primekillermd.group_commands.run(conn, message, sender);
-        primekillermd.media.run(conn, message, sender);
-        primekillermd.bug_crash.run(conn, message, sender);
-
-        // Ping command
-        if (text.startsWith('.ping')) {
-            conn.sendMessage(sender, '🏓 Pong!', MessageType.text);
-        }
-    });
+// Welcome / start message
+function startMessage(userNumber) {
+    const menu = utils.getMenu(userNumber);
+    bot.sendMessage(userNumber, `Hello ${userNumber}!\n${menu}`);
 }
 
-startBot().catch(err => console.log(err));
+// Handle commands
+function handleCommand(userNumber, message) {
+    const text = message.trim().toLowerCase();
+
+    // Pairing
+    if (text.startsWith('.pair')) {
+        const number = text.split(' ')[1];
+        if (!number) return bot.sendMessage(userNumber, 'Enter your phone number to pair e.g., 2547xxxxxxx');
+        const success = utils.pairUser(number);
+        return bot.sendMessage(userNumber, success ? `✅ Number ${number} paired successfully!` : '❌ Already paired.');
+    }
+
+    // Owner-only commands
+    if (text.startsWith('.delpair')) {
+        const success = utils.delPair(userNumber);
+        return bot.sendMessage(userNumber, success ? '✅ All pairs deleted.' : '❌ You are not the owner.');
+    }
+
+    if (text.startsWith('.listpair')) {
+        const list = utils.listPairs(userNumber);
+        const formatted = list.length ? list.map(u => u.number).join('\n') : 'No pairs yet.';
+        return bot.sendMessage(userNumber, `Paired Numbers:\n${formatted}`);
+    }
+
+    // Antidelete
+    if (text.startsWith('.antidelete')) return antidelete.run(bot, message, userNumber);
+
+    // Antilink
+    if (text.startsWith('.antilink')) return antilink.run(bot, message, userNumber);
+
+    // Group commands
+    if (text.startsWith('.promote') || text.startsWith('.demote') || text.startsWith('.kickall') || text.startsWith('.close') || text.startsWith('.open')) {
+        return group_commands.run(bot, message, userNumber);
+    }
+
+    // Media commands
+    if (text.startsWith('.image') || text.startsWith('.video') || text.startsWith('.song') || text.startsWith('.tiktok') || text.startsWith('.yts') || text.startsWith('.vcf')) {
+        return media.run(bot, message, userNumber);
+    }
+
+    // Bug / crash
+    if (text.startsWith('.bug')) return bug_crash.run(bot, message, userNumber);
+
+    // Ping
+    if (text.startsWith('.ping')) return bot.sendMessage(userNumber, '🏓 Pong!');
+
+    // Menu
+    if (text.startsWith('.menu') || text.startsWith('.start')) return startMessage(userNumber);
+
+    // Unknown command
+    bot.sendMessage(userNumber, '❌ Unknown command. Use .menu to see all commands.');
+}
+
+// Main loop
+function main() {
+    // Replace with your bot.listen implementation
+    const listeners = bot.listen(); // Example: [{user: '2547xxxxxxx', message: '.ping'}]
+    for (const { user, message } of listeners) {
+        handleCommand(user, message);
+    }
+}
+
+// Start the bot
+main();
