@@ -1,115 +1,82 @@
 # bot.py
 import os
 from primekillermd import antidelete, antilink, group_commands, media, bug_crash, utils
-from datetime import datetime
 
-# Owner & channels
-OWNER_NUMBER = "254792770219"
+# Your bot details
+BOT_NAME = "Prime Killer MD"
 WHATSAPP_CHANNEL = "https://whatsapp.com/channel/0029Vb7UKYqHbFVCW3uGad0l"
-TELEGRAM_CHANNEL = "https://t.me/primekillercrasher"
-TELEGRAM_GROUP = "https://t.me/primekillercrasherv1"
+OWNER_NUMBER = "254792770219"
+TELEGRAM_CONTACT = "https://t.me/Handsome_primis_killer_kent"
 
-# Initialize bot (example using utils.py init function)
+# Initialize bot (example using a WhatsApp library)
 bot = utils.init_bot(owner=OWNER_NUMBER)
 
-# Menu function
-def send_menu(user):
-    now = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-    menu_text = f"""
-╭━━ ◇「 ° PRIME KILLER MD ° 」◇
-┃⌬ ʙᴏᴛ : ⛧ＰＲＩΜΞ⛧ ᴋîᄂᄂér ⛧CЯΛSᕼΞЯ⛧
+# Menu / info message
+def start_message(user):
+    menu = f"""
+╭━━ ◇「 ° INFOBOT ° 」◇
+┃⌬ ʙᴏᴛ : {BOT_NAME}
 ┃⌬ ᴜsᴇʀ : {user}
-┃⌬ ᴘʟᴀᴛғᴏʀᴍ : ᴡʜᴀᴛsᴀᴘᴘ
-┃⌬ ᴏᴡɴᴇʀ : +{OWNER_NUMBER}
-┃⌬ ᴅᴇᴠ : Primekiller Kent
-┃⌬ ᴅᴀᴛᴇ : {now}
+┃⌬ ᴘʟᴀᴛᴇғᴏʀᴍ : WhatsApp / Multi-device
+┃⌬ ᴅᴇᴠ : {OWNER_NUMBER}
 ╰━━━━━━━━━━━━━━━◇
 
-╭━━ ◇「 ° COMMANDS ° 」◇
-┃⌬ .pair - Connect device
-┃⌬ .delpair - Remove device
-┃⌬ .listpair - View all devices
-┃⌬ .listmode - View connected modes
-┃⌬ .runtime - View bot uptime
-┃⌬ .antidelete - Anti delete messages
-┃⌬ .antilink - Anti link protection
-┃⌬ .promote - Promote member
-┃⌬ .demote - Demote member
-┃⌬ .kick - Kick member
-┃⌬ .kickall - Kick all
-┃⌬ .open - Open group
-┃⌬ .close - Close group
-┃⌬ .image - Download image
-┃⌬ .song - Download song
-┃⌬ .vcf - Download VCF contact
-┃⌬ .video - Download video
-┃⌬ .yts - YouTube search
-┃⌬ .tiktok - TikTok download
-┃⌬ .bugcrash - Bug Crash ⚠️ Coming Soon
-┃⌬ .ping - Check bot status
+╭━━ ◇「 ° {BOT_NAME} ° 」◇
+┃⌬ .pair - Connect your device
+┃⌬ .delpair - Remove your device
+┃⌬ .listpair - View all paired devices
+┃⌬ .antidelete - Anti-delete messages
+┃⌬ .antilink - Anti-link protection
+┃⌬ .promote / .demote / .kickall - Group commands
+┃⌬ .image / .video / .song / .tiktok / .yts - Media commands
+┃⌬ .bug - Bug / Crash menu (Coming Soon)
+┃⌬ .ping - Bot latency
 ╰━━━━━━━━━━━━━━━◇
 
-View WhatsApp Channel: {WHATSAPP_CHANNEL}
-Join Telegram Channel: {TELEGRAM_CHANNEL}
-Join Telegram Group: {TELEGRAM_GROUP}
-Powered by ⛧ＰＲＩΜΞ⛧ kîᄂᄂér ⛧ƘΞИŦ⛧
+Join the channel first to use the bot: {WHATSAPP_CHANNEL}
+Contact dev: {TELEGRAM_CONTACT}
 """
-    bot.send_message(user, menu_text, image="Prime_Killer_MD.png")
+    bot.send_message(user, menu)
 
-# Command handler
-def handle_commands(user, message):
+# Command handlers
+def handle_commands(message, user):
     text = message.lower()
-
-    # Menu
-    if text.startswith(".menu"):
-        send_menu(user)
-
+    
+    # Pair commands
+    if text.startswith(".pair") or text.startswith(".delpair") or text.startswith(".listpair"):
+        utils.pair_command(bot, message, user, WHATSAPP_CHANNEL)
+    
+    # Anti-delete
+    elif text.startswith(".antidelete"):
+        antidelete.run(bot, message, user, WHATSAPP_CHANNEL)
+    
+    # Anti-link
+    elif text.startswith(".antilink"):
+        antilink.run(bot, message, user, WHATSAPP_CHANNEL)
+    
+    # Group commands
+    elif text.startswith(".promote") or text.startswith(".demote") or text.startswith(".kickall") or text.startswith(".open") or text.startswith(".close") or text.startswith(".antigroupmention"):
+        group_commands.run(bot, message, user)
+    
+    # Media commands
+    elif text.startswith(".image") or text.startswith(".video") or text.startswith(".song") or text.startswith(".tiktok") or text.startswith(".yts") or text.startswith(".vcf"):
+        media.run(bot, message, user)
+    
+    # Bug / Crash commands
+    elif text.startswith(".bug"):
+        bug_crash.run(bot, message, user)
+    
     # Ping
     elif text.startswith(".ping"):
-        bot.send_message(user, "🏓 Pong! Bot is alive!")
-
-    # Antidelete
-    elif text.startswith(".antidelete"):
-        antidelete.run(bot, user, WHATSAPP_CHANNEL)
-
-    # Antilink
-    elif text.startswith(".antilink"):
-        antilink.run(bot, user, WHATSAPP_CHANNEL)
-
-    # Group commands
-    elif text.startswith((".promote", ".demote", ".kick", ".kickall", ".open", ".close")):
-        group_commands.run(bot, user, text)
-
-    # Media commands
-    elif text.startswith((".image", ".song", ".vcf", ".video", ".yts", ".tiktok")):
-        media.run(bot, user, text)
-
-    # Bug crash
-    elif text.startswith(".bugcrash"):
-        bug_crash.run(bot, user)
-
-    # Pair commands
-    elif text.startswith((".pair", ".delpair", ".listpair")):
-        utils.pair_command(bot, user, text)
-
-# Welcome/start message
-def start_message(user):
-    message = f"""
-⛧ＰＲＩΜΞ⛧ ᛕΙᄂᄂΞＲ ⛧CЯΛSᕼΞЯ⛧ ɃЦ₲ ɃØŦ is running...
-Owner: +{OWNER_NUMBER}
-Join the channel first to use the bot: {WHATSAPP_CHANNEL}
-Type .menu to see all commands.
-"""
-    bot.send_message(user, message)
+        bot.send_message(user, "🏓 Pong!")
 
 # Main loop
 def main():
-    for user, message in bot.listen():  # listen() should yield (user, message)
+    for user, message in bot.listen():
         if message.startswith(".start"):
             start_message(user)
         else:
-            handle_commands(user, message)
+            handle_commands(message, user)
 
 if __name__ == "__main__":
-    print("⛧ＰＲＩΜΞ⛧ ᴋîᄂᄂér ⛧CЯΛSᕼΞЯ⛧ WhatsApp Bot is running...")
     main()
