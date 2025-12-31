@@ -1,48 +1,42 @@
-# primekillermd/utils.py
-from time import time
+import json
+import os
 
-# Example bot initializer (replace with your actual WhatsApp bot library)
-class WhatsAppBot:
-    def __init__(self, owner):
-        self.owner = owner
-        self.users = {}
-    
-    def send_message(self, user, message):
-        print(f"[Message to {user}]: {message}")
-    
-    def listen(self):
-        """
-        Mock listener: yields (user, message) tuples.
-        Replace with your WhatsApp library listener.
-        """
-        while True:
-            user_input = input("Message (format user: message): ")
-            if ":" in user_input:
-                user, msg = user_input.split(":", 1)
-                yield user.strip(), msg.strip()
+PAIRS_FILE = "pairs.json"
 
-def init_bot(owner):
-    """Initialize and return bot instance"""
-    return WhatsAppBot(owner)
+def load_pairs():
+    if not os.path.exists(PAIRS_FILE):
+        with open(PAIRS_FILE, "w") as f:
+            json.dump({"paired_users": []}, f)
+    with open(PAIRS_FILE, "r") as f:
+        return json.load(f)
 
-# Pair command handler
+def save_pairs(data):
+    with open(PAIRS_FILE, "w") as f:
+        json.dump(data, f, indent=2)
+
 def pair_command(bot, message, user):
+    data = load_pairs()
     text = message.lower()
+
+    # Pair new user
     if text.startswith(".pair"):
-        bot.send_message(user, "✅ Device paired successfully!")
+        if user not in data["paired_users"]:
+            data["paired_users"].append(user)
+            save_pairs(data)
+            bot.send_message(user, f"✅ {user} paired successfully!\nJoin the channel first: https://whatsapp.com/channel/0029Vb7UKYqHbFVCW3uGad0l")
+        else:
+            bot.send_message(user, "⚠️ Already paired!")
+
+    # Delete user pair
     elif text.startswith(".delpair"):
-        bot.send_message(user, "🗑️ Pair removed successfully!")
+        if user in data["paired_users"]:
+            data["paired_users"].remove(user)
+            save_pairs(data)
+            bot.send_message(user, "❌ Pair removed successfully!")
+        else:
+            bot.send_message(user, "⚠️ You are not paired!")
+
+    # List paired users (admin only)
     elif text.startswith(".listpair"):
-        bot.send_message(user, "📋 List of paired devices:\n1. Device A\n2. Device B")
-
-# Simple ping
-def ping(bot, user):
-    bot.send_message(user, "🏓 Pong!")
-
-# Uptime function
-START_TIME = time()
-def runtime(bot, user):
-    elapsed = int(time() - START_TIME)
-    hours, remainder = divmod(elapsed, 3600)
-    minutes, seconds = divmod(remainder, 60)
-    bot.send_message(user, f"⏱️ Bot uptime: {hours}h {minutes}m {seconds}s")
+        paired = "\n".join(data["paired_users"]) if data["paired_users"] else "No users paired yet."
+        bot.send_message(user, f"📋 Paired users:\n{paired}")
