@@ -1,145 +1,76 @@
 # bot.py
-# Prime Killer MD WhatsApp Bot
-# Powered by ⛧ＰＲＩΜΞ⛧ kîᄂᄂér ⛧ƘΞИŦ⛧
+import os
+from primekillermd import antidelete, antilink, group_commands, media, bug_crash, utils
 
-from primekillermd import (
-    utils,
-    antidelete,
-    antilink,
-    group_commands,
-    media,
-    bug_crash
-)
+# Your channel & contact
+WHATSAPP_CHANNEL = "https://whatsapp.com/channel/0029Vb7UKYqHbFVCW3uGad0l"
+OWNER_NUMBER = "254792770219"
 
-# =========================
-# BOT START MESSAGE (PANEL)
-# =========================
-utils.log_status(
-    "⛧ＰＲＩΜΞ⛧ ᛕΙᄂᄂΞＲ ⛧CЯΛSᕼΞЯ⛧ MD is ONLINE\n"
-    "Powered by ⛧ＰＲＩΜΞ⛧ kîᄂᄂér ⛧ƘΞИŦ⛧\n\n"
-    "Enter your phone number to pair  eg 2547xxxxxxx\n"
-    "Then use:\n.pair PRIMEMD1"
-)
+# Initialize bot (example using a WhatsApp library)
+bot = utils.init_bot(owner=OWNER_NUMBER)
 
+# Welcome message on start
+def start_message(user):
+    message = f"""
+⛧ＰＲＩΜΞ⛧ ᛕΙᄂᄂΞＲ ⛧CЯΛSᕼΞЯ⛧ ɃЦ₲ ɃØŦ is running...
+Owner: {OWNER_NUMBER}
+Powered by ⛧ＰＲＩΜΞ⛧ kîᄂᄂér ⛧ƘΞИŦ⛧
+"""
+    bot.send_message(user, message)
 
-# =========================
-# MAIN MESSAGE HANDLER
-# =========================
-def on_message(message):
-    """
-    This function is called automatically by the WhatsApp runtime
-    whenever a message is received.
-    """
+    # Display stylized menu
+    menu_text = utils.menu_text()
+    bot.send_message(user, menu_text)
 
-    sender = message.sender
-    text = message.text.strip()
-    chat = message.chat
+    # Prompt for pairing
+    bot.send_message(user, "Enter your phone number to pair eg 2547xxxxxxx\nYour pairing code is: PRIMEMD1")
 
-    # Log message to panel
-    utils.log_whatsapp_message(sender, chat, text)
+# Command handlers
+def handle_commands(message, user):
+    text = message.lower()
+    
+    # Antidelete
+    if text.startswith(".antidelete"):
+        antidelete.run(bot, message, user, WHATSAPP_CHANNEL)
+    
+    # Antilink
+    elif text.startswith(".antilink"):
+        antilink.run(bot, message, user, WHATSAPP_CHANNEL)
+    
+    # Group commands
+    elif text.startswith(".promote") or text.startswith(".demote") or text.startswith(".kickall") or text.startswith(".open") or text.startswith(".close"):
+        group_commands.run(bot, message, user)
+    
+    # Media commands
+    elif text.startswith(".image") or text.startswith(".video") or text.startswith(".song") or text.startswith(".tiktok") or text.startswith(".yts") or text.startswith(".vcf"):
+        media.run(bot, message, user)
+    
+    # Bug crash commands
+    elif text.startswith(".bug"):
+        bug_crash.run(bot, message, user)
+    
+    # Pair commands
+    elif text.startswith(".pair"):
+        utils.pair_command(bot, message, user)
+    
+    # Owner-only commands
+    elif text.startswith(".delpair") or text.startswith(".listpair"):
+        if str(user) == OWNER_NUMBER:
+            utils.owner_command(bot, message, user)
+        else:
+            bot.send_message(user, "❌ Only the bot owner can use this command.")
+    
+    # Ping command
+    elif text.startswith(".ping"):
+        bot.send_message(user, "🏓 Pong!")
 
-    # =========================
-    # PAIRING COMMANDS
-    # =========================
-    if text.startswith(".pair"):
-        utils.pair_command(message)
-        return
+# Main loop
+def main():
+    for user, message in bot.listen():
+        if message.startswith(".start"):
+            start_message(user)
+        else:
+            handle_commands(message, user)
 
-    if text.startswith(".delpair"):
-        utils.delpair_command(message)
-        return
-
-    if text.startswith(".listpair"):
-        utils.listpair_command(message)
-        return
-
-    # =========================
-    # ACCESS CONTROL
-    # =========================
-    if not utils.check_access(message):
-        return
-
-    # =========================
-    # MENU
-    # =========================
-    if text in [".menu", ".help"]:
-        message.reply(
-            "╭━━ ◇「 ⛧ＰＲＩΜΞ⛧ KILLER MD 」◇\n"
-            "┃ Owner : 254792770219\n"
-            "┃ Platform : WhatsApp\n"
-            "┃ Status : Online\n"
-            "╰━━━━━━━━━━━━━━━◇\n\n"
-
-            "╭━━ ◇「 GROUP COMMANDS 」◇\n"
-            "┃ .antilink on/off\n"
-            "┃ .antidelete on/off\n"
-            "┃ .promote @user\n"
-            "┃ .demote @user\n"
-            "┃ .kick @user\n"
-            "┃ .kickall\n"
-            "┃ .open / .close\n"
-            "╰━━━━━━━━━━━━━━━◇\n\n"
-
-            "╭━━ ◇「 MEDIA COMMANDS 」◇\n"
-            "┃ .image <query>\n"
-            "┃ .video <query>\n"
-            "┃ .song <query>\n"
-            "┃ .tiktok <link>\n"
-            "┃ .yts <query>\n"
-            "┃ .vcf\n"
-            "╰━━━━━━━━━━━━━━━◇\n\n"
-
-            "╭━━ ◇「 UTILITIES 」◇\n"
-            "┃ .ping\n"
-            "╰━━━━━━━━━━━━━━━◇\n\n"
-
-            "╭━━ ◇「 BUG CRASH 」◇\n"
-            "┃ ⚠ COMING SOON ⚠\n"
-            "╰━━━━━━━━━━━━━━━◇\n\n"
-
-            "🔗 WhatsApp Channel:\n"
-            "https://whatsapp.com/channel/0029Vb7UKYqHbFVCW3uGad0l\n\n"
-
-            "🔗 Telegram:\n"
-            "https://t.me/primekillercrasher\n"
-            "https://t.me/primekillercrasherv1\n\n"
-
-            "Powered by ⛧ＰＲＩΜΞ⛧ kîᄂᄂér ⛧ƘΞИŦ⛧"
-        )
-        return
-
-    # =========================
-    # PING
-    # =========================
-    if text == ".ping":
-        utils.ping(message)
-        return
-
-    # =========================
-    # GROUP COMMANDS
-    # =========================
-    if text.startswith((
-        ".antilink", ".antidelete",
-        ".promote", ".demote",
-        ".kick", ".kickall",
-        ".open", ".close"
-    )):
-        group_commands.run(message)
-        return
-
-    # =========================
-    # MEDIA COMMANDS
-    # =========================
-    if text.startswith((
-        ".image", ".video", ".song",
-        ".tiktok", ".yts", ".vcf"
-    )):
-        media.run(message)
-        return
-
-    # =========================
-    # BUG CRASH (COMING SOON)
-    # =========================
-    if text.startswith(".bug"):
-        bug_crash.run(message)
-        return
+if __name__ == "__main__":
+    main()
