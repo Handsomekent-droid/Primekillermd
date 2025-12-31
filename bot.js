@@ -1,83 +1,117 @@
 // bot.js
 const fs = require('fs');
 const path = require('path');
-const utils = require('./utilis');
+const { Client } = require('whatsapp-web.js'); // Example library
+const qrcode = require('qrcode-terminal');
+
+const utils = require('./primekillermd/utils');
 const antidelete = require('./primekillermd/antidelete');
 const antilink = require('./primekillermd/antilink');
-const group_commands = require('./primekillermd/group_commands');
+const groupCommands = require('./primekillermd/group_commands');
 const media = require('./primekillermd/media');
-const bug_crash = require('./primekillermd/bug_crash');
+const bugCrash = require('./primekillermd/bug_crash');
 
-// Initialize bot (replace this with actual WhatsApp bot instance)
-const bot = utils.initBot({ sendMessage: console.log, listen: () => [] });
+const PAIRS_FILE = path.join(__dirname, 'pairs.json');
+const ADMIN_NUMBER = "254792770219"; // Your number
+const WHATSAPP_CHANNEL = "https://whatsapp.com/channel/0029Vb7UKYqHbFVCW3uGad0l";
 
-// Welcome / start message
-function startMessage(userNumber) {
-    const menu = utils.getMenu(userNumber);
-    bot.sendMessage(userNumber, `Hello ${userNumber}!\n${menu}`);
+let pairs = {};
+if (fs.existsSync(PAIRS_FILE)) {
+    pairs = JSON.parse(fs.readFileSync(PAIRS_FILE));
 }
 
-// Handle commands
-function handleCommand(userNumber, message) {
-    const text = message.trim().toLowerCase();
+// Initialize WhatsApp client
+const client = new Client();
 
-    // Pairing
-    if (text.startsWith('.pair')) {
+client.on('qr', qr => {
+    qrcode.generate(qr, { small: true });
+    console.log("Scan QR to connect WhatsApp.");
+});
+
+client.on('ready', () => {
+    console.log("⛧ＰＲＩＭΞ⛧ ᛕΙᄂᄂΞＲ ⛧CЯΛSᕼΞЯ⛧ ɃЦ₲ ɃØŦ is online!");
+});
+
+// Listen to messages
+client.on('message', async msg => {
+    const senderNumber = msg.from.replace(/[^0-9]/g, '');
+    const text = msg.body.trim();
+
+    // Log to panel console
+    console.log("==================================================");
+    console.log("[WHATSAPP MESSAGE]");
+    console.log(`From : ${senderNumber}`);
+    console.log(`Text : ${text}`);
+    console.log("==================================================");
+
+    // Handle pairing
+    if (text.startsWith('.pair ')) {
         const number = text.split(' ')[1];
-        if (!number) return bot.sendMessage(userNumber, 'Enter your phone number to pair e.g., 2547xxxxxxx');
-        const success = utils.pairUser(number);
-        return bot.sendMessage(userNumber, success ? `✅ Number ${number} paired successfully!` : '❌ Already paired.');
+        if (!pairs[number]) {
+            pairs[number] = { pairedAt: new Date().toISOString() };
+            fs.writeFileSync(PAIRS_FILE, JSON.stringify(pairs, null, 2));
+            client.sendMessage(msg.from, `✅ Paired successfully! You can now use the bot on WhatsApp.`);
+        } else {
+            client.sendMessage(msg.from, "⚠️ This number is already paired.");
+        }
+        return;
     }
 
-    // Owner-only commands
-    if (text.startsWith('.delpair')) {
-        const success = utils.delPair(userNumber);
-        return bot.sendMessage(userNumber, success ? '✅ All pairs deleted.' : '❌ You are not the owner.');
+    if (!pairs[senderNumber] && senderNumber !== ADMIN_NUMBER) {
+        client.sendMessage(msg.from, "Enter your phone number to pair e.g., 2547xxxxxxx. Your pairing code is PRIMEMD1");
+        return;
     }
 
-    if (text.startsWith('.listpair')) {
-        const list = utils.listPairs(userNumber);
-        const formatted = list.length ? list.map(u => u.number).join('\n') : 'No pairs yet.';
-        return bot.sendMessage(userNumber, `Paired Numbers:\n${formatted}`);
+    // Admin commands
+    if (senderNumber === ADMIN_NUMBER) {
+        if (text.startsWith('.delpair ')) {
+            const number = text.split(' ')[1];
+            if (pairs[number]) {
+                delete pairs[number];
+                fs.writeFileSync(PAIRS_FILE, JSON.stringify(pairs, null, 2));
+                client.sendMessage(msg.from, `🗑️ Pair ${number} deleted successfully.`);
+            } else {
+                client.sendMessage(msg.from, "⚠️ Number not found in pairs.");
+            }
+            return;
+        }
+        if (text === '.listpair') {
+            let list = Object.keys(pairs).map(n => `• ${n}`).join('\n') || 'No paired numbers';
+            client.sendMessage(msg.from, `📋 Paired Numbers:\n${list}`);
+            return;
+        }
     }
 
-    // Antidelete
-    if (text.startsWith('.antidelete')) return antidelete.run(bot, message, userNumber);
+    // General commands
+    if (text.startsWith('.antidelete')) return antidelete.run(client, msg, WHATSAPP_CHANNEL);
+    if (text.startsWith('.antilink')) return antilink.run(client, msg, WHATSAPP_CHANNEL);
+    if (text.startsWith('.promote') || text.startsWith('.demote') || text.startsWith('.kickall')) return groupCommands.run(client, msg);
+    if (text.startsWith('.image') || text.startsWith('.video') || text.startsWith('.song') || text.startsWith('.tiktok') || text.startsWith('.yts')) return media.run(client, msg);
+    if (text.startsWith('.bug')) return bugCrash.run(client, msg);
 
-    // Antilink
-    if (text.startsWith('.antilink')) return antilink.run(bot, message, userNumber);
-
-    // Group commands
-    if (text.startsWith('.promote') || text.startsWith('.demote') || text.startsWith('.kickall') || text.startsWith('.close') || text.startsWith('.open')) {
-        return group_commands.run(bot, message, userNumber);
+    // Ping command
+    if (text === '.ping') {
+        client.sendMessage(msg.from, '🏓 Pong!');
     }
 
-    // Media commands
-    if (text.startsWith('.image') || text.startsWith('.video') || text.startsWith('.song') || text.startsWith('.tiktok') || text.startsWith('.yts') || text.startsWith('.vcf')) {
-        return media.run(bot, message, userNumber);
+    // Menu command
+    if (text === '.menu') {
+        const menuMessage = `
+╭━━ ◇「 ⛧ＰＲＩＭΞ⛧ ᛕΙᄂᄂΞＲ ⛧CЯΛSᕼΞЯ⛧ ɃЦ₲ ɃØŦ 」◇
+┃⌬ Owner : ${ADMIN_NUMBER}
+┃⌬ Platform : WhatsApp
+┃⌬ Powered by : ⛧ＰＲＩΜΞ⛧ kîᄂᄂér ⛧ƘΞИŦ⛧
+╰━━━━━━━━━━━━━━
+Bug Crash: Coming Soon
+Media Commands: .image, .video, .song, .tiktok, .yts
+Group Commands: .promote, .demote, .kickall
+Utility: .antidelete, .antilink, .ping
+Pair Commands: .pair, .delpair (admin only), .listpair (admin only)
+
+View channel: ${WHATSAPP_CHANNEL}
+`;
+        client.sendMessage(msg.from, menuMessage);
     }
+});
 
-    // Bug / crash
-    if (text.startsWith('.bug')) return bug_crash.run(bot, message, userNumber);
-
-    // Ping
-    if (text.startsWith('.ping')) return bot.sendMessage(userNumber, '🏓 Pong!');
-
-    // Menu
-    if (text.startsWith('.menu') || text.startsWith('.start')) return startMessage(userNumber);
-
-    // Unknown command
-    bot.sendMessage(userNumber, '❌ Unknown command. Use .menu to see all commands.');
-}
-
-// Main loop
-function main() {
-    // Replace with your bot.listen implementation
-    const listeners = bot.listen(); // Example: [{user: '2547xxxxxxx', message: '.ping'}]
-    for (const { user, message } of listeners) {
-        handleCommand(user, message);
-    }
-}
-
-// Start the bot
-main();
+client.initialize();
